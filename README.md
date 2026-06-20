@@ -43,16 +43,52 @@ Install Flask, then run the app:
 
 Visit `http://127.0.0.1:5000`. Paste raw email source (including headers) or upload a `.eml` file.
 
+## How it was built
+
+**1. Parsing email structure**
+
+Built `analyzer.py` using Python's standard library `email` module to split a raw `.eml` file into headers and body — the foundation everything else reads from.
+
+**2. Building the detection engine**
+
+Wrote functions to check `Authentication-Results` for SPF/DKIM/DMARC pass/fail, compare `From` vs `Reply-To` domains, scan body URLs for raw IPs and suspicious subdomain patterns, and flag urgency language in the subject line. Each check adds points toward a 0-100 risk score.
+
+**3. Testing the engine via command line**
+
+Before building any UI, validated the scoring logic directly against both test `.eml` files from the terminal — confirming the phishing sample scored 100/HIGH with all 6 expected flags, and the legitimate sample scored 0/LOW with none.
+
+**4. Building the web interface**
+
+Wrapped the tested engine in a Flask app with a simple form for pasting raw email source or uploading a `.eml` file, and a results view showing the score, risk level, and the specific flags that were raised.
+
+**5. End-to-end verification**
+
+Ran both test cases through the live web interface to confirm the full pipeline — file/text input, parsing, scoring, and rendering — works correctly end to end (see screenshots below).
+
 ## Test cases
 
 ### Phishing example — scores 100/HIGH
 
-Key headers from the test file:
+Full raw email (`phishing_example.eml`):
 
     From: "PayPal Security" <security@paypal-secure-verify.com>
     Reply-To: support@account-recovery-team.net
+    To: victim@example.com
     Subject: URGENT: Your account has been suspended - Verify Immediately
-    Authentication-Results: spf=fail dkim=fail dmarc=fail
+    Authentication-Results: mx.example.com; spf=fail smtp.mailfrom=paypal-secure-verify.com; dkim=fail header.d=paypal-secure-verify.com; dmarc=fail
+    Date: Mon, 15 Jun 2026 09:14:22 -0500
+    Content-Type: text/html; charset="UTF-8"
+
+    <html>
+    <body>
+    <p>Dear Customer,</p>
+    <p>We have detected unusual activity on your account. Your account has been suspended.
+    You must verify your identity immediately or it will be permanently closed.</p>
+    <p><a href="http://192.168.45.22/login.secure.verify.paypal-account.com/index.php">Click here to verify your account</a></p>
+    <p>Failure to act within 24 hours will result in permanent suspension.</p>
+    <p>PayPal Security Team</p>
+    </body>
+    </html>
 
 Flags raised:
 - SPF authentication failed
@@ -64,11 +100,26 @@ Flags raised:
 
 ### Legitimate example — scores 0/LOW
 
-Key headers from the test file:
+Full raw email (`legitimate_example.eml`):
 
     From: "GitHub" <noreply@github.com>
+    To: developer@example.com
     Subject: [GitHub] A new SSH key was added to your account
-    Authentication-Results: spf=pass dkim=pass dmarc=pass
+    Authentication-Results: mx.example.com; spf=pass smtp.mailfrom=github.com; dkim=pass header.d=github.com; dmarc=pass
+    Date: Mon, 15 Jun 2026 14:02:10 -0500
+    Content-Type: text/plain; charset="UTF-8"
+
+    Hi there,
+
+    A new SSH key was recently added to your account.
+
+    Key name: work-laptop
+    Added on: June 15, 2026
+
+    If you did not add this key, please review your account security settings at https://github.com/settings/keys
+
+    Thanks,
+    The GitHub Team
 
 No flags raised — all authentication checks passed, no domain mismatches, no suspicious URL patterns.
 
@@ -91,6 +142,10 @@ No flags raised — all authentication checks passed, no domain mismatches, no s
 - `legitimate_example.eml` — test case: legitimate email
 - `screenshot_phishing_result.png` — tool output on the phishing sample
 - `screenshot_legitimate_result.png` — tool output on the legitimate sample
+
+## Key takeaway
+
+Phishing triage is one of the highest-volume ticket types a help desk or SOC Tier 1 analyst handles. This project automates the same manual checklist an analyst works through by hand — authentication verification, domain comparison, and link inspection — and pairs with the [osTicket help desk lab](https://github.com/Ghummun/osticket-help-desk-lab) and [Active Directory home lab](https://github.com/Ghummun/active-directory-home-lab) to cover detection, ticketing, and identity management across the help desk workflow.
 
 ## What I'd add next
 
