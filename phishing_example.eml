@@ -1,0 +1,18 @@
+From: "PayPal Security" <security@paypal-secure-verify.com>
+Reply-To: support@account-recovery-team.net
+To: victim@example.com
+Subject: URGENT: Your account has been suspended - Verify Immediately
+Authentication-Results: mx.example.com; spf=fail smtp.mailfrom=paypal-secure-verify.com; dkim=fail header.d=paypal-secure-verify.com; dmarc=fail
+Date: Mon, 15 Jun 2026 09:14:22 -0500
+Content-Type: text/html; charset="UTF-8"
+
+<html>
+<body>
+<p>Dear Customer,</p>
+<p>We have detected unusual activity on your account. Your account has been suspended.
+You must verify your identity immediately or it will be permanently closed.</p>
+<p><a href="http://192.168.45.22/login.secure.verify.paypal-account.com/index.php">Click here to verify your account</a></p>
+<p>Failure to act within 24 hours will result in permanent suspension.</p>
+<p>PayPal Security Team</p>
+</body>
+</html>

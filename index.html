@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Phishing Triage Console</title>
+<style>
+  body {
+    margin: 0;
+    background: #0b0f0d;
+    color: #e6efe9;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    line-height: 1.5;
+  }
+  .wrap { max-width: 800px; margin: 0 auto; padding: 48px 24px; }
+  h1 { font-family: monospace; font-size: 26px; margin-bottom: 8px; }
+  .subhead { color: #7d9389; font-size: 14px; margin-bottom: 32px; }
+  .panel {
+    background: #111714;
+    border: 1px solid #233129;
+    border-radius: 6px;
+    padding: 24px;
+    margin-bottom: 20px;
+  }
+  .panel-label {
+    font-family: monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    color: #7d9389;
+    margin-bottom: 12px;
+    display: block;
+  }
+  textarea {
+    width: 100%;
+    min-height: 200px;
+    background: #0b0f0d;
+    border: 1px solid #233129;
+    border-radius: 4px;
+    color: #e6efe9;
+    font-family: monospace;
+    font-size: 13px;
+    padding: 14px;
+    box-sizing: border-box;
+  }
+  .submit-btn {
+    margin-top: 16px;
+    background: #4a9d6f;
+    color: #0b0f0d;
+    border: none;
+    font-weight: 700;
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+  .error-msg {
+    background: rgba(214,91,74,0.1);
+    border: 1px solid #d65b4a;
+    color: #d65b4a;
+    padding: 12px 16px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+  }
+  .score-box {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+  .score-num {
+    font-family: monospace;
+    font-size: 42px;
+    font-weight: 700;
+    min-width: 90px;
+  }
+  .risk-HIGH { color: #d65b4a; }
+  .risk-MEDIUM { color: #d9a441; }
+  .risk-LOW { color: #4a9d6f; }
+  .flag-row {
+    padding: 10px 0;
+    border-bottom: 1px solid #233129;
+    font-size: 14px;
+  }
+  .flag-row:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>Email Risk Analyzer</h1>
+  <p class="subhead">Paste raw email source (including headers) or upload a .eml file to check for phishing indicators.</p>
+
+  {% if error %}
+  <div class="error-msg">{{ error }}</div>
+  {% endif %}
+
+  <div class="panel">
+    <span class="panel-label">Paste email source</span>
+    <form action="/analyze" method="post" enctype="multipart/form-data">
+      <textarea name="email_text" placeholder="Paste full raw email, including From, Subject, Authentication-Results headers..."></textarea>
+      <br>
+      <span class="panel-label" style="margin-top:16px;">Or upload a .eml file</span>
+      <input type="file" name="email_file" accept=".eml,.txt">
+      <br>
+      <button type="submit" class="submit-btn">Run Analysis</button>
+    </form>
+  </div>
+
+  {% if result %}
+  <div class="panel">
+    <span class="panel-label">Result</span>
+    <div class="score-box">
+      <div class="score-num risk-{{ result.risk_level }}">{{ result.score }}</div>
+      <div>
+        <div class="risk-{{ result.risk_level }}" style="font-weight:700; font-size:16px;">{{ result.risk_level }} RISK</div>
+        <div style="color:#7d9389; font-size:13px; margin-top:4px;">{{ result.subject }}</div>
+        <div style="color:#7d9389; font-size:12px;">from: {{ result.from_header }}</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <span class="panel-label">Flags raised ({{ result.flags|length }})</span>
+    {% if result.flags %}
+      {% for flag in result.flags %}
+      <div class="flag-row">⚠ {{ flag }}</div>
+      {% endfor %}
+    {% else %}
+      <div style="color:#7d9389;">No indicators triggered.</div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+</div>
+</body>
+</html>
